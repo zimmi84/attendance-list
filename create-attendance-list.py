@@ -1,25 +1,20 @@
 import datetime
 import sys
-from datetime import datetime
 from openpyxl import Workbook, load_workbook
-from openpyxl.styles import PatternFill
+from openpyxl.styles import Alignment, PatternFill
 from openpyxl.formatting.rule import CellIsRule
+from openpyxl.utils import get_column_letter
 
-def load_perslist(file_name, sheetname=None):
+def load_playerslist(file_name, sheetname=None):
     wb = load_workbook(file_name)
     ws = wb[sheetname] if sheetname else wb.active
-    persons = []
+    players = []
     for row in ws.iter_rows(min_row=2, values_only=True):
         if row[0] and row[1]:
-            persons.append((row[0], row[1]))
-    return persons
+            players.append((row[0], row[1]))
+    return players
 
-def create_team_sheet(wb, sheetname, persons, start_date, end_date):
-    from openpyxl.utils import get_column_letter
-    from openpyxl.styles import Alignment, PatternFill
-    from openpyxl.formatting.rule import CellIsRule
-    import datetime
-
+def create_team_sheet(wb, sheetname, players, start_date, end_date):
     ws = wb.create_sheet(title=sheetname)
 
     center_align = Alignment(horizontal="center", vertical="center")
@@ -65,7 +60,7 @@ def create_team_sheet(wb, sheetname, persons, start_date, end_date):
     game_dates = [c for c, d in termine if d.weekday() == gameday]
 
     # Count possible practice days until today (for B2)
-    ws["B2"] = f'=SUMPRODUCT(--(WEEKDAY(C3:N3,2)=1), --(C3:N3 <= TODAY()))'
+    ws["B2"] = f'=SUMPRODUCT(--(WEEKDAY(C3:N3,2)=1) + --(WEEKDAY(C3:N3,2)=3), --(C3:N3 <= TODAY()))'
     #ws["B2"] = f'=SUMPRODUCT(--(WEEKDAY(C3:N3,2)=&practice_day), --(C3:N3 <= TODAY()))'
 
     # ------------------------------------
@@ -79,7 +74,7 @@ def create_team_sheet(wb, sheetname, persons, start_date, end_date):
     # ------------------------------------
     # Participant data from row 4
     # ------------------------------------
-    for row_idx, (name, vorname) in enumerate(persons, start=4):
+    for row_idx, (name, vorname) in enumerate(players, start=4):
         ws.cell(row=row_idx, column=1, value=name)
         ws.cell(row=row_idx, column=2, value=vorname)
 
@@ -116,7 +111,7 @@ def create_team_sheet(wb, sheetname, persons, start_date, end_date):
             ws.cell(row=row_idx, column=game_col, value="")
 
     # Total attendance
-    total_start_row = len(persons) +6
+    total_start_row = len(players) +6
     ws.cell(row=total_start_row, column=1, value="TOTAL:")
     num_attendance_formula = f'=COUNTIF(C4:C19,"a")'
     ws.cell(row=total_start_row, column=3, value=num_attendance_formula)
@@ -124,7 +119,7 @@ def create_team_sheet(wb, sheetname, persons, start_date, end_date):
     # ------------------------------------
     # Insert legend below the list
     # ------------------------------------
-    legend_start_row = len(persons) + 8
+    legend_start_row = len(players) + 8
     ws.cell(row=legend_start_row, column=1, value="Legende:")
     ws.cell(row=legend_start_row + 1, column=1, value='a = anwesend',).fill=attendpractice_fill
     ws.cell(row=legend_start_row + 2, column=1, value='e = entschuldigt abwesend').fill=excused_fill
@@ -146,8 +141,8 @@ if len(sys.argv) != 3:
 
 # Try to parse the dates
 try:
-    start_date = datetime.strptime(sys.argv[1], "%Y-%m-%d").date()
-    end_date = datetime.strptime(sys.argv[2], "%Y-%m-%d").date()
+    start_date = datetime.datetime.strptime(sys.argv[1], "%Y-%m-%d").date()
+    end_date = datetime.datetime.strptime(sys.argv[2], "%Y-%m-%d").date()
 except ValueError:
     print("❌ Error: Please enter the date values in the format YYYY-MM-DD.")
     usage()
@@ -157,15 +152,15 @@ if start_date > end_date:
     print("❌ Error: Start date must not be after the end date.")
     usage()
 
-persons_teamDa = load_perslist("teamDa.xlsx")
-persons_teamDb = load_perslist("teamDb.xlsx")
+players_teamDa = load_playerslist("teamDa.xlsx")
+players_teamDb = load_playerslist("teamDb.xlsx")
 
 wb = Workbook()
 # Remove the default “Sheet”
 std = wb.active
 wb.remove(std)
 
-create_team_sheet(wb, "Team Da", persons_teamDa, start_date, end_date)
-create_team_sheet(wb, "Team Db", persons_teamDb, start_date, end_date)
+create_team_sheet(wb, "Team Da", players_teamDa, start_date, end_date)
+create_team_sheet(wb, "Team Db", players_teamDb, start_date, end_date)
 
 wb.save("attendance-list.xlsx")
