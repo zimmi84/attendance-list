@@ -3,7 +3,9 @@ import sys
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Alignment, PatternFill
 from openpyxl.formatting.rule import CellIsRule
-from openpyxl.utils import get_column_letter
+from openpyxl.utils import get_column_letter, column_index_from_string
+
+
 
 def load_playerslist(file_name, sheetname=None):
     wb = load_workbook(file_name)
@@ -47,13 +49,24 @@ def create_team_sheet(wb, sheetname, players, start_date, end_date):
     first_letter_col = get_column_letter(col) # get first Column letter with dates
     current = start_date
     while current <= end_date:
-        if current.weekday() in practice_days or current.weekday() == gameday:
-            zelle = ws.cell(row=3, column=col, value=current)
+        weekday = current.weekday()
+    
+        is_regular_practice = weekday in practice_days
+        is_gameday = weekday == gameday
+        if extra_day_start and extra_day_end:
+            is_extra_day = (
+                current.weekday() == 4 and extra_day_start <= current <= extra_day_end # 4 for Friday
+            )
+        else:
+            is_extra_day = False
+
+        if is_regular_practice or is_gameday or is_extra_day:
+            zelle = ws.cell(row=header_row, column=col, value=current)
             zelle.number_format = "DD.MM.YYYY"
             zelle.alignment = rotated_align
             termine.append((col, current))
             if current.weekday() == gameday:
-                ws.cell(row=3, column=col).fill = saturday_fill
+                ws.cell(row=header_row, column=col).fill = saturday_fill
             col += 1
         current += datetime.timedelta(days=1)
     
@@ -86,7 +99,9 @@ def create_team_sheet(wb, sheetname, players, start_date, end_date):
     # ------------------------------------
     # Participant data from row 4
     # ------------------------------------
+    number_of_players=0
     for row_idx, (name, vorname) in enumerate(players, start=4):
+        number_of_players += 1
         ws.cell(row=row_idx, column=1, value=name)
         ws.cell(row=row_idx, column=2, value=vorname)
 
@@ -122,11 +137,16 @@ def create_team_sheet(wb, sheetname, players, start_date, end_date):
         else:
             ws.cell(row=row_idx, column=game_col, value="")
 
+        
+
     # Total attendance
     total_start_row = len(players) +6
     ws.cell(row=total_start_row, column=1, value="TOTAL:")
-    num_attendance_formula = f'=COUNTIF(C4:C19,"a")'
-    ws.cell(row=total_start_row, column=3, value=num_attendance_formula)
+    ws.cell(row=total_start_row, column=2, value=number_of_players)
+    for total_col in range(column_index_from_string(first_letter_col),column_index_from_string(last_letter_col)+1):
+        current_col=get_column_letter(total_col)
+        num_attendance_formula = f'=COUNTIF({current_col}4:{current_col}{number_of_players+3},"a")' 
+        ws.cell(row=total_start_row, column=total_col, value=num_attendance_formula)
 
     # ------------------------------------
     # Insert legend below the list
@@ -142,13 +162,16 @@ def create_team_sheet(wb, sheetname, players, start_date, end_date):
 ### main 
 # Input Verification - Usage message
 def usage():
-    print("Usage: python create-attendance-list.py <start date> <end date>")
-    print("Example: python create-attendance-list.py 2025-07-01 2025-09-30")
+    print("Usage:")
+    print("  python create-attendance-list.py <start_date> <end_date> [extra_day_start extra_day_end]")
+    print("\nBeispiele:")
+    print("  python create-attendance-list.py 2025-07-01 2025-09-30")
+    print("  python create-attendance-list.py 2025-07-01 2025-09-30 2025-08-01 2025-08-31")
     sys.exit(1)
 
 # Check: Did the user pass exactly two arguments?
-if len(sys.argv) != 3:
-    print("❌ Error: Exactly two date arguments must be specified.")
+if len(sys.argv) not in (3,5):
+    print("❌ Error: Invalid number of arguments.")
     usage()
 
 # Try to parse the dates
@@ -163,6 +186,22 @@ except ValueError:
 if start_date > end_date:
     print("❌ Error: Start date must not be after the end date.")
     usage()
+
+# Optional: additional time range for additional practice day
+extra_day_start = None
+extra_day_end = None
+
+if len(sys.argv) == 5:
+    try:
+        extra_day_start = datetime.datetime.strptime(sys.argv[3], "%Y-%m-%d").date()
+        extra_day_end = datetime.datetime.strptime(sys.argv[4], "%Y-%m-%d").date()
+    except ValueError:
+        print("❌ Error: Please enter the date values in the format YYYY-MM-DD.")
+        usage()
+    
+    if extra_day_start > extra_day_end:
+        print("❌ Error: The additional range is invalid.")
+        usage()
 
 players_teamDa = load_playerslist("teamDa.xlsx")
 players_teamDb = load_playerslist("teamDb.xlsx")
