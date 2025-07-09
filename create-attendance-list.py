@@ -29,6 +29,7 @@ def create_team_sheet(wb, sheetname, players, start_date, end_date):
 
     practice_days = [0, 2]  # Monday and Wednesday
     gameday = 5             # Saturday
+    header_row = 3          # where all the headers will be defined on row/line 3
 
     # ------------------------------------
     # Headers
@@ -43,6 +44,7 @@ def create_team_sheet(wb, sheetname, players, start_date, end_date):
     # ------------------------------------
     termine = []
     col = 3  # Column C
+    first_letter_col = get_column_letter(col) # get first Column letter with dates
     current = start_date
     while current <= end_date:
         if current.weekday() in practice_days or current.weekday() == gameday:
@@ -54,22 +56,32 @@ def create_team_sheet(wb, sheetname, players, start_date, end_date):
                 ws.cell(row=3, column=col).fill = saturday_fill
             col += 1
         current += datetime.timedelta(days=1)
+    
+    # get last Column letter with dates
+    last_letter_col = get_column_letter(col)
+
 
     # practice dates
     practice_dates = [c for c, d in termine if d.weekday() in practice_days]
     game_dates = [c for c, d in termine if d.weekday() == gameday]
 
     # Count possible practice days until today (for B2)
-    ws["B2"] = f'=SUMPRODUCT(--(WEEKDAY(C3:N3,2)=1) + --(WEEKDAY(C3:N3,2)=3), --(C3:N3 <= TODAY()))'
-    #ws["B2"] = f'=SUMPRODUCT(--(WEEKDAY(C3:N3,2)=&practice_day), --(C3:N3 <= TODAY()))'
+    count_days_formula = (
+        f'=SUMPRODUCT('
+        f'--(WEEKDAY({first_letter_col}{header_row}:{last_letter_col}{header_row},2)=1) + '
+        f'--(WEEKDAY({first_letter_col}{header_row}:{last_letter_col}{header_row},2)=3), '
+        f'--({first_letter_col}{header_row}:{last_letter_col}{header_row} <= TODAY())'
+        f')'
+    )
+    ws["B2"] = count_days_formula
 
     # ------------------------------------
     # Additional columns for quota + games
     # ------------------------------------
     practicesquote_col = col
     game_col = col + 1
-    ws.cell(row=3, column=practicesquote_col, value="Präsenz (%)").alignment=rotated_align
-    ws.cell(row=3, column=game_col, value="Anz. Spiele").alignment=rotated_align
+    ws.cell(row=header_row, column=practicesquote_col, value="Präsenz (%)").alignment=rotated_align
+    ws.cell(row=header_row, column=game_col, value="Anz. Spiele").alignment=rotated_align
 
     # ------------------------------------
     # Participant data from row 4
