@@ -58,7 +58,7 @@ def create_team_sheet(wb, sheetname, players, start_date, end_date):
         current += datetime.timedelta(days=1)
     
     # get last Column letter with dates
-    last_letter_col = get_column_letter(col)
+    last_letter_col = get_column_letter(col-1)
 
 
     # practice dates
