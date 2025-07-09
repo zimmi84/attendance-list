@@ -159,6 +159,12 @@ def create_team_sheet(wb, sheetname, players, start_date, end_date):
     ws.cell(row=legend_start_row + 4, column=1, value='s = Spielteilnahme').fill=gameattend_fill
     ws.cell(row=legend_start_row + 5, column=1, value='u = unentschuldigt abwesend').fill=unexcused_fill
 
+    # -----------------------------------
+    # Auto fit for columns
+    # all my trials have not worked yet
+    # -----------------------------------
+
+
 ### main 
 # Input Verification - Usage message
 def usage():
@@ -211,7 +217,7 @@ wb = Workbook()
 std = wb.active
 wb.remove(std)
 
-create_team_sheet(wb, "Team Da", players_teamDa, start_date, end_date)
-create_team_sheet(wb, "Team Db", players_teamDb, start_date, end_date)
+create_team_sheet(wb, "TeamDa", players_teamDa, start_date, end_date)
+create_team_sheet(wb, "TeamDb", players_teamDb, start_date, end_date)
 
 wb.save("attendance-list.xlsx")
