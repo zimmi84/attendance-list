@@ -90,7 +90,8 @@ def create_team_sheet(wb, sheetname, players, start_date, end_date):
     count_days_formula = (
         f'=SUMPRODUCT('
         f'--(WEEKDAY({first_letter_col}{header_row}:{last_letter_col}{header_row},2)=1) + '
-        f'--(WEEKDAY({first_letter_col}{header_row}:{last_letter_col}{header_row},2)=3), '
+        f'--(WEEKDAY({first_letter_col}{header_row}:{last_letter_col}{header_row},2)=3) + '
+        f'--(WEEKDAY({first_letter_col}{header_row}:{last_letter_col}{header_row},2)=5), '
         f'--({first_letter_col}{header_row}:{last_letter_col}{header_row} <= TODAY())'
         f')'
     )
