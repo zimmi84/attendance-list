@@ -30,6 +30,7 @@ def create_team_sheet(wb, sheetname, players, start_date, end_date):
     attendpractice_fill = PatternFill(start_color="6fdc6f", end_color="6fdc6f", fill_type="solid")  # "a" attend / present = green
     gameattend_fill = PatternFill(start_color="99ccff", end_color="99ccff", fill_type="solid")      # "s" Game attend = bright bright blue
     otherteam_fill = PatternFill(start_color="cc99ff", end_color="cc99ff", fill_type="solid")       # "t" Goes with other team = bright purpel
+    pikett_fill = PatternFill(start_color="cc99ff", end_color="#ff9999", fill_type="solid")       # "p" Goes with other team = dusty pink
 
     practice_days = [0, 2]  # Monday and Wednesday
     gameday = 5             # Saturday
@@ -127,6 +128,7 @@ def create_team_sheet(wb, sheetname, players, start_date, end_date):
             ws.conditional_formatting.add(cell_range, CellIsRule(operator='equal', formula=['"s"'], fill=gameattend_fill))
             ws.conditional_formatting.add(cell_range, CellIsRule(operator='equal', formula=['"f"'], fill=excusedholiday_fill))
             ws.conditional_formatting.add(cell_range, CellIsRule(operator='equal', formula=['"t"'], fill=otherteam_fill))
+            ws.conditional_formatting.add(cell_range, CellIsRule(operator='equal', formula=['"p"'], fill=pikett_fill))
 
             # set width for all iterated columns
             ws.column_dimensions[col_letter].width = rotated_width_col
@@ -177,6 +179,8 @@ def create_team_sheet(wb, sheetname, players, start_date, end_date):
     ws.cell(row=legend_start_row + 5, column=1, value='u = unentschuldigt abwesend').fill=unexcused_fill
     ws.cell(row=legend_start_row + 5, column=1).font = default_font
     ws.cell(row=legend_start_row + 6, column=1, value='t = Aufgebot anderes Team').fill=otherteam_fill
+    ws.cell(row=legend_start_row + 6, column=1).font = default_font
+    ws.cell(row=legend_start_row + 6, column=1, value='p = Pikett').fill=pikett_fill
     ws.cell(row=legend_start_row + 6, column=1).font = default_font
 
     # -----------------------------------
