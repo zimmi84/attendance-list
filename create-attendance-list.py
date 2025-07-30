@@ -30,7 +30,7 @@ def create_team_sheet(wb, sheetname, players, start_date, end_date):
     attendpractice_fill = PatternFill(start_color="6fdc6f", end_color="6fdc6f", fill_type="solid")  # "a" attend / present = green
     gameattend_fill = PatternFill(start_color="99ccff", end_color="99ccff", fill_type="solid")      # "s" Game attend = bright bright blue
     otherteam_fill = PatternFill(start_color="cc99ff", end_color="cc99ff", fill_type="solid")       # "t" Goes with other team = bright purpel
-    pikett_fill = PatternFill(start_color="cc99ff", end_color="#ff9999", fill_type="solid")       # "p" Goes with other team = dusty pink
+    pikett_fill = PatternFill(start_color="ff9999", end_color="ff9999", fill_type="solid")       # "p" Goes with other team = dusty pink
 
     practice_days = [0, 2]  # Monday and Wednesday
     gameday = 5             # Saturday
