@@ -180,8 +180,8 @@ def create_team_sheet(wb, sheetname, players, start_date, end_date):
     ws.cell(row=legend_start_row + 5, column=1).font = default_font
     ws.cell(row=legend_start_row + 6, column=1, value='t = Aufgebot anderes Team').fill=otherteam_fill
     ws.cell(row=legend_start_row + 6, column=1).font = default_font
-    ws.cell(row=legend_start_row + 6, column=1, value='p = Pikett').fill=pikett_fill
-    ws.cell(row=legend_start_row + 6, column=1).font = default_font
+    ws.cell(row=legend_start_row + 7, column=1, value='p = Pikett').fill=pikett_fill
+    ws.cell(row=legend_start_row + 7, column=1).font = default_font
 
     # -----------------------------------
     # Auto fit for columns and format
