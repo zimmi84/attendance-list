@@ -3,3 +3,6 @@ venv/
 
 # Ignore all Excel files
 *.xlsx
+
+# Ingore MacOS file
+.DS_Store
