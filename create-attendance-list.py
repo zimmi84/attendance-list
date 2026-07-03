@@ -1,11 +1,245 @@
 import datetime
 import sys
+from calendar import monthrange
 from openpyxl import Workbook, load_workbook
-from openpyxl.styles import Alignment, PatternFill
+from openpyxl.styles import Alignment, PatternFill, Border, Side, Font
 from openpyxl.formatting.rule import CellIsRule
 from openpyxl.utils import get_column_letter, column_index_from_string
-from openpyxl.styles import Font
+from openpyxl.worksheet.page import PageMargins
 
+
+def create_compact_season_calendar(
+    filename,
+    start_date,
+    end_date,
+    extra_friday_training=False
+):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Kalender"
+
+    # =========================================================
+    # STYLES
+    # =========================================================
+
+    title_font = Font(size=18, bold=True)
+    month_font = Font(size=13, bold=True)
+    normal_font = Font(size=10)
+
+    center = Alignment(
+        horizontal="center",
+        vertical="center",
+        wrap_text=True
+    )
+
+    left = Alignment(
+        horizontal="left",
+        vertical="center",
+        wrap_text=True
+    )
+
+    thin = Side(style="thin", color="CCCCCC")
+
+    border = Border(
+        left=thin,
+        right=thin,
+        top=thin,
+        bottom=thin
+    )
+
+    training_fill = PatternFill(
+        start_color="92D050",
+        end_color="92D050",
+        fill_type="solid"
+    )
+
+    game_fill = PatternFill(
+        start_color="5B9BD5",
+        end_color="5B9BD5",
+        fill_type="solid"
+    )
+
+    weekend_fill = PatternFill(
+        start_color="F2F2F2",
+        end_color="F2F2F2",
+        fill_type="solid"
+    )
+
+    # =========================================================
+    # PAGE SETUP
+    # =========================================================
+
+    ws.page_setup.orientation = "landscape"
+    ws.page_setup.fitToWidth = 1
+    ws.page_setup.fitToHeight = 1
+
+    ws.page_margins = PageMargins(
+        left=0.3,
+        right=0.3,
+        top=0.4,
+        bottom=0.4
+    )
+
+    # =========================================================
+    # TITLE
+    # =========================================================
+
+    ws.merge_cells("A1:L1")
+
+    title_cell = ws["A1"]
+    title_cell.value = "SK Root Da Saisonkalender"
+    title_cell.font = title_font
+    title_cell.alignment = center
+
+    # =========================================================
+    # MONTHS
+    # =========================================================
+
+    current = datetime.date(start_date.year, start_date.month, 1)
+
+    months = []
+
+    while current <= end_date:
+        months.append(current)
+
+        if current.month == 12:
+            current = datetime.date(current.year + 1, 1, 1)
+        else:
+            current = datetime.date(current.year, current.month + 1, 1)
+
+    # Nur obere Hälfte -> maximal 3 Monate
+    months = months[:3]
+
+    # =========================================================
+    # LAYOUT
+    # =========================================================
+
+    # Pro Monat:
+    # Tag | WD | Termin | KW
+
+    month_width = 4
+
+    for month_index, month_date in enumerate(months):
+
+        start_col = month_index * month_width + 1
+
+        # -----------------------------------------------------
+        # MONTH HEADER
+        # -----------------------------------------------------
+
+        month_name = month_date.strftime("%B %Y")
+
+        ws.merge_cells(
+            start_row=3,
+            start_column=start_col,
+            end_row=3,
+            end_column=start_col + 3
+        )
+
+        cell = ws.cell(row=3, column=start_col)
+        cell.value = month_name
+        cell.font = month_font
+        cell.alignment = center
+
+        # -----------------------------------------------------
+        # COLUMN WIDTHS
+        # -----------------------------------------------------
+
+        ws.column_dimensions[get_column_letter(start_col)].width = 5
+        ws.column_dimensions[get_column_letter(start_col + 1)].width = 5
+        ws.column_dimensions[get_column_letter(start_col + 2)].width = 24
+        ws.column_dimensions[get_column_letter(start_col + 3)].width = 5
+
+        # -----------------------------------------------------
+        # DAYS
+        # -----------------------------------------------------
+
+        days_in_month = monthrange(
+            month_date.year,
+            month_date.month
+        )[1]
+
+        row = 4
+
+        for day in range(1, days_in_month + 1):
+
+            d = datetime.date(
+                month_date.year,
+                month_date.month,
+                day
+            )
+
+            weekday_short = [
+                "Mo", "Di", "Mi",
+                "Do", "Fr", "Sa", "So"
+            ][d.weekday()]
+
+            iso_week = d.isocalendar()[1]
+
+            # -------------------------------------------------
+            # DETERMINE EVENTS
+            # -------------------------------------------------
+
+            event_text = ""
+            fill = None
+
+            # Training Monday + Wednesday
+            if d.weekday() in [0, 2]:
+                event_text = "Training 18:00"
+                fill = training_fill
+
+            # Optional Friday training
+            if extra_friday_training and d.weekday() == 4:
+                event_text = "Training 18:00"
+                fill = training_fill
+
+            # Saturday = Game
+            if d.weekday() == 5:
+                event_text = "Spiel"
+                fill = game_fill
+
+            # -------------------------------------------------
+            # WRITE CELLS
+            # -------------------------------------------------
+
+            values = [
+                day,
+                weekday_short,
+                event_text,
+                iso_week
+            ]
+
+            for offset, value in enumerate(values):
+
+                c = ws.cell(
+                    row=row,
+                    column=start_col + offset
+                )
+
+                c.value = value
+                c.font = normal_font
+                c.border = border
+
+                if offset == 2:
+                    c.alignment = left
+                else:
+                    c.alignment = center
+
+                # Weekend shading
+                if d.weekday() in [5, 6]:
+                    c.fill = weekend_fill
+
+                # Event color
+                if offset == 2 and fill:
+                    c.fill = fill
+
+            row += 1
+
+    # =========================================================
+    # SAVE
+    # =========================================================
+
+    wb.save(filename)
 
 
 def load_playerslist(file_name, sheetname=None):
@@ -224,6 +458,12 @@ if len(sys.argv) not in (3,5):
 try:
     start_date = datetime.datetime.strptime(sys.argv[1], "%Y-%m-%d").date()
     end_date = datetime.datetime.strptime(sys.argv[2], "%Y-%m-%d").date()
+    calendar_start = start_date.replace(day=1)
+    last_day = monthrange(
+        end_date.year,
+        end_date.month
+    )[1]
+    calendar_end = end_date.replace(day=last_day)
 except ValueError:
     print("❌ Error: Please enter the date values in the format YYYY-MM-DD.")
     usage()
@@ -261,5 +501,14 @@ wb.remove(std)
 create_team_sheet(wb, "Team Da", players_teamDa, start_date, end_date)
 create_team_sheet(wb, "Team Db", players_teamDb, start_date, end_date)
 # create_team_sheet(wb, "Team C SKR", players_teamC, start_date, end_date)
+
+
+create_compact_season_calendar(
+    filename="season-calendar.xlsx",
+    start_date=calendar_start,
+    end_date=calendar_end,
+    extra_friday_training=True
+)
+
 
 wb.save("attendance-list.xlsx")
