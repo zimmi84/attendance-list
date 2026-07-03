@@ -59,6 +59,11 @@ def create_team_sheet(wb, sheetname, players, start_date, end_date):
     while current <= end_date:
         weekday = current.weekday()
     
+        #Is an ugly solution but quick for the current situation, because C Junioren have practice on Monday and Thursday.
+        # the better solution would be to have more input parameters like practice days for each team, but this makes the 
+        # input list very long.    
+        if sheetname == "Team C SKR":
+            practice_days = [0, 3]
         is_regular_practice = weekday in practice_days
         is_gameday = weekday == gameday
         if extra_day_start and extra_day_end:
@@ -210,7 +215,7 @@ def usage():
     print("  python create-attendance-list.py 2025-07-01 2025-09-30 2025-08-01 2025-08-31")
     sys.exit(1)
 
-# Check: Did the user pass exactly two arguments?
+# Check: Did the user pass enough arguments?
 if len(sys.argv) not in (3,5):
     print("❌ Error: Invalid number of arguments.")
     usage()
@@ -223,7 +228,7 @@ except ValueError:
     print("❌ Error: Please enter the date values in the format YYYY-MM-DD.")
     usage()
 
-# Logic check: Start date must be before or equal to end date
+# Logic check: Start date must be before end date
 if start_date > end_date:
     print("❌ Error: Start date must not be after the end date.")
     usage()
@@ -246,6 +251,7 @@ if len(sys.argv) == 5:
 
 players_teamDa = load_playerslist("teamDa.xlsx")
 players_teamDb = load_playerslist("teamDb.xlsx")
+players_teamC = load_playerslist("teamC.xlsx")
 
 wb = Workbook()
 # Remove the default “Sheet”
@@ -254,5 +260,6 @@ wb.remove(std)
 
 create_team_sheet(wb, "Team Da", players_teamDa, start_date, end_date)
 create_team_sheet(wb, "Team Db", players_teamDb, start_date, end_date)
+# create_team_sheet(wb, "Team C SKR", players_teamC, start_date, end_date)
 
 wb.save("attendance-list.xlsx")
